@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>낭만파티 결산 및 지출증빙 관리</title>
+  <style>
+    :root{--navy:#07233f;--blue:#1363a8;--gold:#d8ad4d;--bg:#f4f7fa;--line:#dbe3ec;--red:#b42318;--green:#067647}
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:#182230;font-family:Arial,"Noto Sans KR",sans-serif}
+    header{background:linear-gradient(120deg,var(--navy),#104b7c);color:#fff;padding:34px 20px 28px} .wrap{max-width:1120px;margin:auto}
+    h1{margin:0;font-size:27px} header p{margin:8px 0 0;color:#d9e8f6} main{padding:24px 20px 50px}
+    .notice{background:#fff8e6;border:1px solid #f0d696;border-radius:10px;padding:14px 16px;margin-bottom:18px;font-size:14px;line-height:1.55}
+    .grid{display:grid;gap:16px}.cards{grid-template-columns:repeat(4,1fr);margin-bottom:18px}.two{grid-template-columns:1.05fr .95fr;align-items:start}
+    .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;box-shadow:0 2px 7px #1822300d}.label{font-size:13px;color:#667085}.num{font-size:25px;font-weight:800;margin-top:8px}.small{font-size:12px;color:#667085;margin-top:5px}
+    h2{font-size:18px;margin:0 0 15px;color:var(--navy)} label{display:block;font-size:13px;font-weight:700;margin:12px 0 6px}
+    input,select,textarea,button{font:inherit} input,select,textarea{width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:10px;background:#fff} textarea{min-height:68px;resize:vertical}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.row3{display:grid;grid-template-columns:1.2fr .8fr .8fr;gap:10px}
+    button{cursor:pointer;border:0;border-radius:8px;padding:11px 14px;font-weight:700}.primary{background:var(--blue);color:#fff}.secondary{background:#e9f2fb;color:#07518c}.danger{color:var(--red);background:#fff;border:1px solid #f4c7c3;padding:7px 9px;font-size:12px}
+    .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:17px}.progress{display:none;height:8px;background:#e7eef5;border-radius:8px;overflow:hidden;margin-top:10px}.progress i{display:block;height:100%;width:0;background:var(--blue)}
+    table{width:100%;border-collapse:collapse;font-size:14px} th{text-align:left;background:#eef4f8;color:#344054;font-size:12px} th,td{padding:11px 9px;border-bottom:1px solid var(--line);vertical-align:middle}td.right,th.right{text-align:right}.ok{color:var(--green);font-weight:700}.no{color:var(--red);font-weight:700}.receipt{color:#07518c;text-decoration:none;font-weight:700}
+    .bar{height:10px;background:#e7eef5;border-radius:8px;overflow:hidden;min-width:90px}.bar i{height:100%;display:block;background:var(--blue)} .empty{text-align:center;color:#667085;padding:26px}
+    details{margin-top:18px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 15px;font-size:13px;line-height:1.6} summary{cursor:pointer;font-weight:800;color:var(--navy)} code{background:#eef4f8;padding:1px 4px;border-radius:3px}
+    @media(max-width:800px){.cards,.two{grid-template-columns:1fr 1fr}.cards .card:last-child{grid-column:span 2}.tablebox{overflow:auto}}@media(max-width:520px){.cards,.two,.row,.row3{grid-template-columns:1fr}.cards .card:last-child{grid-column:auto}h1{font-size:23px}}
+  </style>
+</head>
+<body>
+<header><div class="wrap"><h1>낭만파티 결산 및 지출증빙 관리</h1><p>행사 예산, 지출, 영수증 사진을 한 곳에서 투명하게 관리합니다.</p></div></header>
+<main class="wrap">
+  <div class="notice"><b>사용 전 설정:</b> 아래 코드의 <code>firebaseConfig</code>에 Firebase 프로젝트 정보를 입력하세요. 영수증은 Firebase Storage에, 지출 내역은 Firestore에 저장됩니다.</div>
+  <section class="grid cards">
+    <div class="card"><div class="label">총 예산</div><div id="budgetTotal" class="num">₩4,000,000</div><div class="small">기본 예산 기준</div></div>
+    <div class="card"><div class="label">총 집행액</div><div id="spentTotal" class="num">₩0</div><div class="small">영수증 등록 지출 포함</div></div>
+    <div class="card"><div class="label">잔액</div><div id="balance" class="num">₩4,000,000</div><div class="small">예산 - 집행액</div></div>
+    <div class="card"><div class="label">증빙 등록률</div><div id="proofRate" class="num">0%</div><div class="small">영수증 첨부 지출 기준</div></div>
+  </section>
+  <section class="grid two">
+    <div class="card">
+      <h2>지출 및 영수증 등록</h2>
+      <form id="expenseForm">
+        <div class="row"><div><label>지출 항목</label><select id="category" required><option value="장소대여비">장소대여비</option><option value="추첨선물비">추첨선물비</option><option value="운영비">운영비</option><option value="기타">기타</option></select></div><div><label>지출일</label><input id="expenseDate" type="date" required></div></div>
+        <div class="row"><div><label>지출처</label><input id="vendor" placeholder="예: 신촌 OO파티룸" required></div><div><label>지출 금액</label><input id="amount" type="number" min="1" step="1" placeholder="3000000" required></div></div>
+        <div class="row"><div><label>결제수단</label><select id="payment"><option>법인카드</option><option>개인카드</option><option>계좌이체</option><option>현금</option></select></div><div><label>지출 담당자</label><input id="manager" placeholder="성명" required></div></div>
+        <label>영수증 사진</label><input id="receipt" type="file" accept="image/*,.pdf" capture="environment"><div class="small">휴대폰에서는 카메라 촬영을 선택할 수 있습니다. PDF도 첨부 가능합니다.</div>
+        <label>비고</label><textarea id="memo" placeholder="계약 내용, 구매 수량, 승인 사항 등을 기록하세요."></textarea>
+        <div class="actions"><button class="primary" type="submit">지출 및 증빙 저장</button><button class="secondary" type="button" id="resetBtn">입력 초기화</button></div><div class="progress" id="progress"><i></i></div><div id="message" class="small"></div>
+      </form>
+    </div>
+    <div class="card"><h2>항목별 예산 집행현황</h2><div class="tablebox"><table><thead><tr><th>항목</th><th class="right">예산</th><th class="right">집행</th><th class="right">잔액</th><th>진행</th></tr></thead><tbody id="summary"></tbody></table></div><div class="actions"><button class="secondary" id="exportBtn">결산 CSV 내려받기</button><button class="secondary" id="printBtn">결산표 인쇄</button></div></div>
+  </section>
+  <section class="card" style="margin-top:16px"><h2>지출 및 증빙 목록</h2><div class="tablebox"><table><thead><tr><th>지출일</th><th>항목</th><th>지출처</th><th class="right">금액</th><th>담당자</th><th>증빙</th><th></th></tr></thead><tbody id="expenseList"><tr><td colspan="7" class="empty">Firebase 연결 후 지출 내역이 표시됩니다.</td></tr></tbody></table></div></section>
+  <details><summary>Firebase 보안 규칙 예시와 설정 방법</summary>
+    <p>1. Firebase Console에서 Firestore Database와 Storage를 생성합니다. 2. 웹 앱을 추가한 뒤 설정값을 아래 코드의 <code>firebaseConfig</code>에 붙여넣습니다. 3. 관리자만 접근하도록 Firebase Authentication을 연결한 뒤 아래 규칙의 이메일을 운영자 계정으로 바꾸세요.</p>
+    <p><b>Firestore 규칙 예시</b><br><code>allow read, write: if request.auth != null && request.auth.token.email in ['관리자이메일'];</code></p>
+    <p><b>Storage 규칙 예시</b><br><code>allow read, write: if request.auth != null && request.auth.token.email in ['관리자이메일'];</code></p>
+  </details>
+</main>
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+  import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+  import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
+
+  // Firebase Console > 프로젝트 설정 > 내 앱 > SDK 설정 및 구성의 값을 아래에 붙여넣으세요.
+  const firebaseConfig = { apiKey:'여기에_API_KEY', authDomain:'여기에_AUTH_DOMAIN', projectId:'여기에_PROJECT_ID', storageBucket:'여기에_STORAGE_BUCKET', messagingSenderId:'여기에_MESSAGING_SENDER_ID', appId:'여기에_APP_ID' };
+  const categoryBudget={ '장소대여비':3000000, '추첨선물비':500000, '운영비':500000, '기타':0 };
+  const won=n=>new Intl.NumberFormat('ko-KR',{style:'currency',currency:'KRW',maximumFractionDigits:0}).format(n||0);
+  const today=new Date().toISOString().slice(0,10); document.querySelector('#expenseDate').value=today;
+  let expenses=[]; let db,storage;
+  const msg=t=>document.querySelector('#message').textContent=t;
+  const configured=()=>!Object.values(firebaseConfig).some(v=>String(v).includes('여기에_'));
+  if(configured()){
+    const app=initializeApp(firebaseConfig); db=getFirestore(app); storage=getStorage(app);
+    onSnapshot(query(collection(db,'partyExpenses'),orderBy('expenseDate','desc')),snap=>{expenses=snap.docs.map(d=>({id:d.id,...d.data()})); render();},err=>msg('불러오기 오류: '+err.message));
+  } else render();
+  function render(){
+    const spent=expenses.reduce((a,e)=>a+Number(e.amount||0),0), proof=expenses.filter(e=>e.receiptUrl).length;
+    document.querySelector('#budgetTotal').textContent=won(4000000); document.querySelector('#spentTotal').textContent=won(spent); document.querySelector('#balance').textContent=won(4000000-spent); document.querySelector('#proofRate').textContent=expenses.length?Math.round(proof/expenses.length*100)+'%':'0%';
+    document.querySelector('#summary').innerHTML=Object.entries(categoryBudget).map(([k,b])=>{const s=expenses.filter(e=>e.category===k).reduce((a,e)=>a+Number(e.amount),0),r=b-s,p=b?Math.min(100,Math.round(s/b*100)):0;return `<tr><td>${k}</td><td class="right">${won(b)}</td><td class="right">${won(s)}</td><td class="right ${r<0?'no':'ok'}">${won(r)}</td><td><div class="bar"><i style="width:${p}%"></i></div></td></tr>`}).join('');
+    const list=document.querySelector('#expenseList'); list.innerHTML=expenses.length?expenses.map(e=>`<tr><td>${e.expenseDate||''}</td><td>${e.category}</td><td>${e.vendor}</td><td class="right">${won(e.amount)}</td><td>${e.manager}</td><td>${e.receiptUrl?`<a class="receipt" target="_blank" href="${e.receiptUrl}">영수증 보기</a>`:'<span class="no">미첨부</span>'}</td><td><button class="danger" data-id="${e.id}">삭제</button></td></tr>`).join(''):'<tr><td colspan="7" class="empty">등록된 지출이 없습니다.</td></tr>';
+  }
+  document.querySelector('#expenseForm').addEventListener('submit',async e=>{
+    e.preventDefault(); if(!configured()) return alert('먼저 코드 안의 Firebase 설정값을 입력하세요.');
+    const file=document.querySelector('#receipt').files[0], amount=Number(document.querySelector('#amount').value), progress=document.querySelector('#progress'), bar=progress.querySelector('i'); progress.style.display='block'; bar.style.width='0%'; msg('저장 준비 중입니다.');
+    const data={category:document.querySelector('#category').value,expenseDate:document.querySelector('#expenseDate').value,vendor:document.querySelector('#vendor').value.trim(),amount,payment:document.querySelector('#payment').value,manager:document.querySelector('#manager').value.trim(),memo:document.querySelector('#memo').value.trim(),createdAt:serverTimestamp(),receiptUrl:'',receiptName:''};
+    try{
+      if(file){const safe=file.name.replace(/[^a-zA-Z0-9._-]/g,'_'), path=`receipts/${Date.now()}_${safe}`, task=uploadBytesResumable(ref(storage,path),file); await new Promise((resolve,reject)=>task.on('state_changed',s=>bar.style.width=Math.round(s.bytesTransferred/s.totalBytes*100)+'%',reject,resolve)); data.receiptUrl=await getDownloadURL(task.snapshot.ref); data.receiptName=file.name;}
+      await addDoc(collection(db,'partyExpenses'),data); e.target.reset(); document.querySelector('#expenseDate').value=today; msg('지출과 증빙이 저장되었습니다.');
+    }catch(err){msg('저장 오류: '+err.message)} finally{setTimeout(()=>progress.style.display='none',700)}
+  });
+  document.querySelector('#resetBtn').onclick=()=>{document.querySelector('#expenseForm').reset();document.querySelector('#expenseDate').value=today;msg('')};
+  document.querySelector('#expenseList').addEventListener('click',async e=>{const id=e.target.dataset.id;if(id&&confirm('이 지출 내역을 삭제할까요? 영수증 파일은 Storage에서 별도 삭제가 필요합니다.')) await deleteDoc(doc(db,'partyExpenses',id));});
+  document.querySelector('#exportBtn').onclick=()=>{const rows=[['지출일','항목','지출처','금액','결제수단','담당자','비고','영수증URL'],...expenses.map(e=>[e.expenseDate,e.category,e.vendor,e.amount,e.payment,e.manager,e.memo,e.receiptUrl])];const csv='\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='낭만파티_결산_'+today+'.csv';a.click();URL.revokeObjectURL(a.href)};
+  document.querySelector('#printBtn').onclick=()=>window.print();
+</script>
+</body></html>
